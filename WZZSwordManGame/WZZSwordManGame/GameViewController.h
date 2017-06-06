@@ -10,7 +10,12 @@
 #import <SceneKit/SceneKit.h>
 #import "CardboardSDK.h"
 #import "CBDViewController.h"
+#define SIMMODE 1//模拟器模式，关闭纸盒
 
+#if SIMMODE
+@interface GameViewController : UIViewController
+#else
 @interface GameViewController : CBDViewController
+#endif
 
 @end

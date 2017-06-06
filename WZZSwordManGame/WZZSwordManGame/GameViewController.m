@@ -30,6 +30,10 @@
     NSTimeInterval timee;
     WZZSocketServerManager * severManager;
     SCNNode * mySword;
+    double testX;
+    double testY;
+    double testZ;
+    int testN;
 }
 
 @end
@@ -39,7 +43,12 @@
 - (instancetype)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
     if (self) {
+#if SIMMODE
+        
+#else
         self.stereoRendererDelegate = self;
+#endif
+        [self setup];
     }
     return self;
 }
@@ -49,6 +58,11 @@
     
     //创建scn视图
     mainView = [[SCNView alloc] initWithFrame:self.view.bounds];
+    
+#if SIMMODE
+    [self.view addSubview:mainView];
+#endif
+    
 //    [self.view addSubview:mainView];//使用vr功能不能往上添加视图需要用vr里的glview
     mainView.playing = YES;
 #if SHOWDEBUGINFO
@@ -94,7 +108,11 @@
     cy.materials.firstObject.diffuse.contents = [UIColor yellowColor];
     
     mySword = [SCNNode nodeWithGeometry:cy];
+#if SIMMODE
+    mySword.position = SCNVector3Make(0, 4, -5);
+#else
     mySword.position = SCNVector3Make(0, 0, 0);
+#endif
     mySword.eulerAngles = SCNVector3Make(0, 0, 0);
     [mainScene.rootNode addChildNode:mySword];
 }
@@ -106,11 +124,23 @@
         NSString * jsonStr = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
         NSDictionary * dic = [self objectFromJsonString:jsonStr];
         if (dic) {
+            NSLog(@"--->%@", jsonStr);
             NSLog(@"--->%@", dic);
-            CGFloat x = [dic[@"xyz"][@"x"] floatValue]*0.1;//加速度值为弧度/秒，乘0.1是0.1秒的
-            CGFloat y = [dic[@"xyz"][@"y"] floatValue]*0.1;
-            CGFloat z = [dic[@"xyz"][@"z"] floatValue]*0.1;
+            float rPix = 0.1;
+            //修复自动偏移
+            float xFix = 0.005104;
+            float yFix = 0.002498;
+            float zFix = 0.001521;
+            CGFloat x = [dic[@"xyz"][@"x"] floatValue]*rPix+xFix;//加速度值为弧度/秒，乘0.1是0.1秒的
+            CGFloat y = [dic[@"xyz"][@"y"] floatValue]*rPix+yFix;
+            CGFloat z = [dic[@"xyz"][@"z"] floatValue]*rPix+zFix;
             mySword.eulerAngles = SCNVector3Make(mySword.eulerAngles.x+x, mySword.eulerAngles.y+y, mySword.eulerAngles.z+z);
+            
+            float aPix = 0.1;
+            CGFloat xx = [dic[@"a"][@"x"] floatValue]*aPix;
+            CGFloat yy = [dic[@"a"][@"y"] floatValue]*aPix;
+            CGFloat zz = [dic[@"a"][@"z"] floatValue]*aPix;
+            mySword.position = SCNVector3Make(mySword.position.x+xx, mySword.position.y+yy, mySword.position.z+zz);
         }
     }];
 }
