@@ -30,10 +30,7 @@
     NSTimeInterval timee;
     WZZSocketServerManager * severManager;
     SCNNode * mySword;
-    double testX;
-    double testY;
-    double testZ;
-    int testN;
+    SCNNode * mySwordRen;
 }
 
 @end
@@ -44,11 +41,10 @@
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
     if (self) {
 #if SIMMODE
-        
+        [self setup];
 #else
         self.stereoRendererDelegate = self;
 #endif
-        [self setup];
     }
     return self;
 }
@@ -104,7 +100,8 @@
 
 //创建我的剑
 - (void)creatSword {
-    SCNCylinder * cy = [SCNCylinder cylinderWithRadius:0.2 height:10];
+    //我的剑柄
+    SCNCylinder * cy = [SCNCylinder cylinderWithRadius:0.2 height:2];
     cy.materials.firstObject.diffuse.contents = [UIColor yellowColor];
     
     mySword = [SCNNode nodeWithGeometry:cy];
@@ -115,32 +112,35 @@
 #endif
     mySword.eulerAngles = SCNVector3Make(0, 0, 0);
     [mainScene.rootNode addChildNode:mySword];
+    
+    //我的剑刃
+    SCNCylinder * cyRen = [SCNCylinder cylinderWithRadius:0.2 height:8];
+    cyRen.materials.firstObject.diffuse.contents = [UIColor cyanColor];
+    mySwordRen = [SCNNode nodeWithGeometry:cyRen];
+    mySwordRen.position = SCNVector3Make(0, 5, 0);
+    mySwordRen.eulerAngles = SCNVector3Make(0, 0, 0);
+    [mySword addChildNode:mySwordRen];
 }
 
 //开启接收socket服务器
 - (void)startSever {
     severManager = [WZZSocketServerManager sharedServerManager];
+    NSLog(@"ip:%@", severManager.localIP);
     [severManager creatServerWithPort:@"38080" timeOut:-1 handleData:^(NSData *data) {
         NSString * jsonStr = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
         NSDictionary * dic = [self objectFromJsonString:jsonStr];
         if (dic) {
             NSLog(@"--->%@", jsonStr);
             NSLog(@"--->%@", dic);
-            float rPix = 0.1;
-            //修复自动偏移
-            float xFix = 0.005104;
-            float yFix = 0.002498;
-            float zFix = 0.001521;
-            CGFloat x = [dic[@"xyz"][@"x"] floatValue]*rPix+xFix;//加速度值为弧度/秒，乘0.1是0.1秒的
-            CGFloat y = [dic[@"xyz"][@"y"] floatValue]*rPix+yFix;
-            CGFloat z = [dic[@"xyz"][@"z"] floatValue]*rPix+zFix;
-            mySword.eulerAngles = SCNVector3Make(mySword.eulerAngles.x+x, mySword.eulerAngles.y+y, mySword.eulerAngles.z+z);
+            CGFloat x = [dic[@"xyz"][@"x"] floatValue];
+            CGFloat y = [dic[@"xyz"][@"y"] floatValue];
+            CGFloat z = [dic[@"xyz"][@"z"] floatValue];
+            mySword.eulerAngles = SCNVector3Make(x, y, z);
             
-            float aPix = 0.1;
-            CGFloat xx = [dic[@"a"][@"x"] floatValue]*aPix;
-            CGFloat yy = [dic[@"a"][@"y"] floatValue]*aPix;
-            CGFloat zz = [dic[@"a"][@"z"] floatValue]*aPix;
-            mySword.position = SCNVector3Make(mySword.position.x+xx, mySword.position.y+yy, mySword.position.z+zz);
+            CGFloat xx = [dic[@"a"][@"x"] floatValue];
+            CGFloat yy = [dic[@"a"][@"y"] floatValue];
+            CGFloat zz = [dic[@"a"][@"z"] floatValue];
+            mySword.position = SCNVector3Make(xx, yy, zz);
         }
     }];
 }

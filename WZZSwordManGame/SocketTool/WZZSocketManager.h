@@ -14,6 +14,11 @@
 @property (nonatomic, strong) AsyncSocket * serverSocket;
 
 /**
+ 本地ip
+ */
+@property (nonatomic, strong, readonly) NSString * localIP;
+
+/**
  服务端单例
  */
 + (instancetype)sharedServerManager;
@@ -28,6 +33,11 @@
 @interface WZZSocketClientManager : NSObject<AsyncSocketDelegate>
 
 @property (nonatomic, strong) AsyncSocket * clientSocket;
+
+/**
+ 本地ip
+ */
+@property (nonatomic, strong, readonly) NSString * localIP;
 
 /**
  客户端单例

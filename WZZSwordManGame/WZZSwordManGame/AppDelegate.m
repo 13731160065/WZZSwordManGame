@@ -25,6 +25,7 @@
     GameViewController *cardboardViewController = [GameViewController new];
     
     self.window.rootViewController = cardboardViewController;
+    
     return YES;
 }
 
