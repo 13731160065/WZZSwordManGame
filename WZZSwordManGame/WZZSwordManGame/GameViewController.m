@@ -127,6 +127,7 @@
     severManager = [WZZSocketServerManager sharedServerManager];
     NSLog(@"ip:%@", severManager.localIP);
     [severManager creatServerWithPort:@"38080" timeOut:-1 handleData:^(NSData *data) {
+#if 0
         NSString * jsonStr = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
         NSDictionary * dic = [self objectFromJsonString:jsonStr];
         if (dic) {
@@ -142,6 +143,33 @@
             CGFloat zz = [dic[@"a"][@"z"] floatValue];
             mySword.position = SCNVector3Make(xx, yy, zz);
         }
+#else
+        //ARkit
+        NSString * jsonStr = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        NSDictionary * dic = [self objectFromJsonString:jsonStr];
+        if (dic) {
+            NSLog(@"--->%@", dic);
+            NSMutableArray * bigArr = [NSMutableArray arrayWithArray:dic[@"dic"]];
+#if 1//坐标轴转换
+            [bigArr exchangeObjectAtIndex:0 withObjectAtIndex:1];
+            [bigArr exchangeObjectAtIndex:0 withObjectAtIndex:2];
+#endif
+            matrix_float4x4 a4x4;
+            for (int i = 0; i < 4; i++) {
+                simd_float4 af4;
+                for (int j = 0; j < 4; j++) {
+                    float smallF = [bigArr[i][j] floatValue];
+                    if (i == 3 && j != 3) {
+                        smallF = smallF*10;
+                    }
+                    af4[j] = smallF;
+                }
+                a4x4.columns[i] = af4;
+            }
+            [mySword setSimdWorldTransform:a4x4];
+//            [mySword setSimdTransform:a4x4];
+        }
+#endif
     }];
 }
 
@@ -304,11 +332,14 @@
 #pragma mark - 渲染循环代理
 //渲染循环刚开始
 - (void)renderer:(id<SCNSceneRenderer>)renderer updateAtTime:(NSTimeInterval)time {
+#if SIMMODE
+#else
     if (time > mainTime) {//每隔多少秒一次
         [self spawnShape];
         mainTime = time+(NSTimeInterval)([WZZGameHelper floatRandomWithMax:3 min:1]);
     }
     [self cleanScene];//清除超出屏幕的node
+#endif
 }
 
 #pragma mark - 纸盒代理
